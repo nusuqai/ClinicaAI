@@ -62,8 +62,13 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <aside className={`fixed md:sticky top-0 right-0 h-screen w-64 bg-primary text-white flex flex-col transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
         <div className="p-6">
-          <a href="/" className="font-heading font-bold text-2xl text-accent hover:text-white transition-colors block text-center mb-8">
-            Clinica AI
+          <a href="/" className="flex flex-col items-center justify-center gap-2 mb-8 group">
+            <div className="bg-primary/20 p-3 rounded-2xl group-hover:bg-primary/30 transition-colors">
+               <img src="/logo.png" alt="Clinica AI Logo" className="h-16 w-auto brightness-0 invert opacity-90 object-contain" />
+            </div>
+            <span className="font-heading font-bold text-2xl text-white tracking-wide">
+              Clinica <span className="text-accent">AI</span>
+            </span>
           </a>
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-accent/20 rounded-full mx-auto flex items-center justify-center mb-3 text-accent font-heading text-2xl border flex-shrink-0 border-accent/50">

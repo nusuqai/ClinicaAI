@@ -7,12 +7,19 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         
         {/* Top Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-24 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
           
           {/* Right Column: Brand */}
           <div className="space-y-6">
-            <h2 className="font-heading font-bold text-3xl text-white">Clinica AI</h2>
-            <p className="font-sans text-background/70 leading-relaxed font-medium">
+            <a href="#" className="flex items-center gap-3 group w-fit">
+              <div className="bg-white/10 p-2.5 rounded-2xl group-hover:bg-white/20 transition-colors">
+                 <img src="/logo.png" alt="Clinica AI Logo" className="h-12 w-auto brightness-0 invert opacity-90 object-contain" />
+              </div>
+              <span className="font-heading font-bold text-3xl text-white leading-none mt-1 shadow-sm">
+                Clinica <span className="text-accent delay-150 transition-colors">AI</span>
+              </span>
+            </a>
+            <p className="font-sans text-white/70 leading-relaxed text-sm md:text-base">
               نقدم رعاية صحية متطورة تعتمد على أدق التقنيات الطبية الذكية. حيث تلتقي التكنولوجيا الدقيقة باللمسة الإنسانية.
             </p>
             <div className="flex gap-4">

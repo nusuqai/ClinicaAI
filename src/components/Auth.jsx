@@ -62,10 +62,13 @@ export default function Auth() {
       <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <a href="/" className="flex items-center justify-center gap-2 text-primary hover:text-accent transition-colors mb-6 group w-fit mx-auto">
+        <a href="/" className="flex items-center justify-center gap-2 text-primary hover:text-accent transition-colors mb-4 group w-fit mx-auto">
           <ArrowRight className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           <span className="font-sans font-medium">العودة للرئيسية</span>
         </a>
+        <div className="flex justify-center mb-4">
+            <img src="/logo.png" alt="Clinica AI Logo" className="h-24 w-auto object-contain" />
+        </div>
         <h2 className="mt-2 text-center text-4xl font-heading font-bold text-primary">
           {isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
         </h2>

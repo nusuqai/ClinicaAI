@@ -67,10 +67,14 @@ export default function Navbar() {
         }`}
       >
         {/* Logo */}
-        <Link to="/" className="font-heading font-bold text-2xl text-primary flex-shrink-0 relative z-50">
-          Clinica AI
-        </Link>
-
+          <a href="#" className="flex items-center gap-3 group z-50">
+            <div className=" p-2 rounded-2xl group-hover:bg-primary/10 transition-colors">
+               <img src="/logo.png" alt="Clinica AI Logo" className="h-10 w-auto object-contain" />
+            </div>
+            <span className="font-heading font-bold text-2xl md:text-3xl text-primary leading-none mt-1">
+              Clinica <span className="text-accent">AI</span>
+            </span>
+          </a>
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-8 font-sans font-medium text-text">
           <a href="#hero" onClick={(e) => handleNavClick(e, '#hero')} className="hover:-translate-y-[1px] transition-transform duration-300">الرئيسية</a>

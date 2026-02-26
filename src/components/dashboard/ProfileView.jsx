@@ -87,31 +87,31 @@ export default function ProfileView({ session }) {
       setSaving(true);
       setMessage('');
 
-      const updates = {
-        id: session?.user?.id,
-        full_name: profile.full_name,
-        phone: profile.phone,
-        date_of_birth: profile.date_of_birth || null,
-        gender: profile.gender || null,
-        blood_type: profile.blood_type || null,
-        updated_at: new Date(),
-      };
-
-      const { error } = await supabase.from('users').upsert(updates, {
-          returning: 'minimal'
-      });
+      // 1. Primary: Update the users table directly (RLS policies now allow this)
+      const { error } = await supabase
+        .from('users')
+        .update({
+          full_name: profile.full_name,
+          phone: profile.phone,
+          date_of_birth: profile.date_of_birth || null,
+          gender: profile.gender || null,
+          blood_type: profile.blood_type || null,
+        })
+        .eq('id', session.user.id);
 
       if (error) throw error;
+
+      // 2. Secondary: Keep auth metadata in sync (for Navbar greeting etc.)
+      await supabase.auth.updateUser({
+        data: {
+          full_name: profile.full_name,
+          phone: profile.phone,
+          blood_type: profile.blood_type || null,
+        }
+      });
+
       setMessage('تم حفظ التغييرات بنجاح');
       setTimeout(() => setMessage(''), 3000);
-      
-      // Update Supabase auth metadata to stay in sync
-      await supabase.auth.updateUser({
-          data: {
-              full_name: profile.full_name,
-              phone: profile.phone
-          }
-      });
       
     } catch (error) {
       console.error('Error updating profile:', error);
