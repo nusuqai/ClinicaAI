@@ -3,12 +3,14 @@ import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Activity, Calendar as CalendarIcon, Clock, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import DoctorBrowserModal from './DoctorBrowserModal';
 
 export default function DashboardHome() {
   const { session } = useOutletContext();
   const [stats, setStats] = useState({ upcoming: 0, past: 0 });
   const [latestAppointment, setLatestAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [browserOpen, setBrowserOpen] = useState(false);
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -99,9 +101,12 @@ export default function DashboardHome() {
             <h3 className="font-heading font-bold text-xl mb-1">صحتك تهمنا</h3>
             <p className="text-sm text-white/80 font-sans mb-4">احجز موعداً جديداً بضغطة زر</p>
           </div>
-          <Link to="/" className="bg-white text-primary text-center py-2.5 rounded-xl font-sans font-bold hover:bg-white/90 transition-colors relative z-10">
+          <button
+            onClick={() => setBrowserOpen(true)}
+            className="bg-white text-primary text-center py-2.5 rounded-xl font-sans font-bold hover:bg-white/90 transition-colors relative z-10"
+          >
             حجز موعد
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -151,6 +156,12 @@ export default function DashboardHome() {
         )}
       </div>
 
+      {browserOpen && (
+        <DoctorBrowserModal
+          session={session}
+          onClose={() => setBrowserOpen(false)}
+        />
+      )}
     </div>
   );
 }

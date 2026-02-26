@@ -20,6 +20,7 @@ export default function CalendarView({ session }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [cancellingId, setCancellingId] = useState(null);
   const [rebookDoctor, setRebookDoctor] = useState(null);
+  const [confirmCancel, setConfirmCancel] = useState(null); // holds appointment to cancel
 
   const fetchAppointments = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -46,7 +47,6 @@ export default function CalendarView({ session }) {
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
 
   const handleCancel = async (apt) => {
-    if (!confirm('هل تريد إلغاء هذا الموعد؟')) return;
     setCancellingId(apt.id);
     try {
       // Update appointment status
@@ -246,7 +246,7 @@ export default function CalendarView({ session }) {
                               <RefreshCw size={12} /> إعادة حجز
                             </button>
                             <button
-                              onClick={() => handleCancel(apt)}
+                              onClick={() => setConfirmCancel(apt)}
                               disabled={isCancelling}
                               className="flex-1 flex items-center justify-center gap-1 text-xs font-sans font-bold py-2 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors disabled:opacity-50"
                             >
@@ -291,10 +291,63 @@ export default function CalendarView({ session }) {
           session={session}
           onClose={() => {
             setRebookDoctor(null);
-            fetchAppointments(); // Refresh after rebooking
+            fetchAppointments();
           }}
         />
       )}
+
+      {/* Custom Cancel Confirmation Modal */}
+      <AnimatePresence>
+        {confirmCancel && (
+          <motion.div
+            key="cancel-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setConfirmCancel(null)}
+          >
+            <motion.div
+              key="cancel-modal"
+              initial={{ scale: 0.9, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 10 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
+              dir="rtl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <XCircle size={36} className="text-red-500" />
+              </div>
+              <h3 className="font-heading font-bold text-xl text-primary mb-2">إلغاء الموعد</h3>
+              <p className="font-sans text-text/70 mb-2">
+                هل أنت متأكد من إلغاء موعدك مع{' '}
+                <strong>{confirmCancel.doctors?.full_name_ar || confirmCancel.doctors?.full_name}</strong>؟
+              </p>
+              <p className="font-sans text-sm text-text/50 mb-6">لا يمكن التراجع عن هذا الإجراء.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmCancel(null)}
+                  className="flex-1 py-3 rounded-xl bg-gray-100 text-primary font-sans font-bold hover:bg-gray-200 transition-colors"
+                >
+                  تراجع
+                </button>
+                <button
+                  onClick={() => {
+                    const apt = confirmCancel;
+                    setConfirmCancel(null);
+                    handleCancel(apt);
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-red-500 text-white font-sans font-bold hover:bg-red-600 transition-colors"
+                >
+                  تأكيد الإلغاء
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

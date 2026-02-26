@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import DoctorBrowserModal from './DoctorBrowserModal';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [browserOpen, setBrowserOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
@@ -100,13 +102,12 @@ export default function Navbar() {
               تسجيل الدخول
             </Link>
           )}
-          <a
-            href="#book"
-            onClick={(e) => handleNavClick(e, '#book')}
+          <button
+            onClick={() => setBrowserOpen(true)}
             className="bg-accent text-white font-sans font-medium px-6 py-2.5 rounded-full hover:scale-[1.03] transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] inline-block shadow-md hover:shadow-lg"
           >
             احجز موعد
-          </a>
+          </button>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -160,13 +161,12 @@ export default function Navbar() {
                     تسجيل الدخول
                   </Link>
                 )}
-                <a
-                  href="#book"
-                  onClick={(e) => handleNavClick(e, '#book')}
-                  className="bg-accent text-white font-sans font-medium px-6 py-3 rounded-full hover:scale-[1.03] transition-transform block text-center shadow-md"
+                <button
+                  onClick={() => { setMobileMenuOpen(false); setBrowserOpen(true); }}
+                  className="bg-accent text-white font-sans font-medium px-6 py-3 rounded-full hover:scale-[1.03] transition-transform block text-center shadow-md w-full"
                 >
                   احجز موعد
-                </a>
+                </button>
               </div>
             </div>
           </motion.div>
@@ -185,6 +185,13 @@ export default function Navbar() {
           />
         )}
       </AnimatePresence>
+      {/* Doctor Browser Modal */}
+      {browserOpen && (
+        <DoctorBrowserModal
+          session={session}
+          onClose={() => setBrowserOpen(false)}
+        />
+      )}
     </div>
   );
 }
