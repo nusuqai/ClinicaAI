@@ -112,7 +112,7 @@ function DoctorProfile({ doctor }) {
 
 // ─── Slot Grid ───
 function SlotGrid({ slots, onFillInput }) {
-  if (!slots.length) return <EmptyState text="لا توجد مواعيد متاحة حاليا" />;
+  if (!slots.length) return <EmptyState text="Preview is not available right now" />;
 
   // Try common field names for the time value
   const getStartDate = (slot) => {
@@ -124,7 +124,7 @@ function SlotGrid({ slots, onFillInput }) {
 
   // Filter to only valid dates
   const validSlots = slots.filter(s => getStartDate(s) !== null);
-  if (!validSlots.length) return <EmptyState text="لا توجد مواعيد متاحة حاليا" />;
+  if (!validSlots.length) return <EmptyState text="Preview is not available right now" />;
 
   return (
     <div className="space-y-2">

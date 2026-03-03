@@ -155,7 +155,6 @@ export default function Auth() {
                       >
                         <option value="male">ذكر</option>
                         <option value="female">أنثى</option>
-                        <option value="other">آخر</option>
                       </select>
                     </div>
                   </div>
