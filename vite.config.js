@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/clinica': {
-        target: 'http://localhost:5050',
+        target: 'http://prepared-dyanna-nusuqai-demo-1a5b158b.koyeb.app',
         changeOrigin: true,
       },
     },
