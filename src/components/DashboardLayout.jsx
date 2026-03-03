@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { LayoutDashboard, Calendar, User, LogOut, Menu, X, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Calendar, User, LogOut, Menu, X, Loader2, Activity } from 'lucide-react';
 
 export default function DashboardLayout() {
   const [session, setSession] = useState(null);
@@ -45,6 +45,7 @@ export default function DashboardLayout() {
   const navItems = [
     { label: 'نظرة عامة', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { label: 'مواعيدي', path: '/dashboard/appointments', icon: <Calendar size={20} /> },
+    { label: 'السجل الطبي', path: '/dashboard/medical-history', icon: <Activity size={20} /> },
     { label: 'الملف الشخصي', path: '/dashboard/profile', icon: <User size={20} /> },
   ];
 

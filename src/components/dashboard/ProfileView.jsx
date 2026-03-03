@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { motion } from 'framer-motion';
-import { Loader2, Save, User, Phone, Droplet, Calendar, Activity } from 'lucide-react';
+import { Loader2, Save, User, Phone, Droplet, Calendar } from 'lucide-react';
 
 export default function ProfileView({ session }) {
   const [profile, setProfile] = useState({
@@ -14,7 +14,7 @@ export default function ProfileView({ session }) {
     avatar_url: ''
   });
   
-  const [medicalHistory, setMedicalHistory] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -61,15 +61,7 @@ export default function ProfileView({ session }) {
             }));
         }
 
-        // Fetch Medical History
-        const { data: history, error: historyError } = await supabase
-          .from('medical_history')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('diagnosed_at', { ascending: false });
 
-        if (historyError) throw historyError;
-        setMedicalHistory(history || []);
         
       } catch (error) {
         console.error('Error loading profile data!', error);
@@ -271,41 +263,7 @@ export default function ProfileView({ session }) {
         </div>
       </motion.div>
 
-      {/* Medical History Section */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-white rounded-3xl p-8 shadow-sm border border-primary/5"
-      >
-          <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-accent/10 rounded-lg text-accent">
-                  <Activity size={24} />
-              </div>
-              <h2 className="text-2xl font-bold font-heading text-primary">السجل الطبي والأمراض المزمنة</h2>
-          </div>
 
-          {medicalHistory.length === 0 ? (
-              <div className="bg-background border border-primary/5 rounded-2xl p-8 text-center">
-                  <p className="font-sans text-text/60">لا يوجد سجلات طبية مضافة حتى الآن.</p>
-              </div>
-          ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {medicalHistory.map(record => (
-                      <div key={record.id} className="bg-background border border-primary/5 rounded-2xl p-5 flex items-start gap-4 hover:border-accent/30 transition-colors">
-                           <div className={`w-3 h-3 rounded-full mt-1.5 shrink-0 ${record.is_active ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`} />
-                           <div>
-                               <h4 className="font-heading font-bold text-lg text-primary">{record.condition}</h4>
-                               <p className="font-sans text-sm text-text/60 mt-1">تاريخ التشخيص: {record.diagnosed_at ? new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'long' }).format(new Date(record.diagnosed_at)) : 'غير محدد'}</p>
-                               <span className={`inline-block mt-3 px-2 py-1 text-xs font-sans font-medium rounded-md ${record.is_active ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
-                                   {record.is_active ? 'حالة نشطة' : 'حالة سابقة'}
-                               </span>
-                           </div>
-                      </div>
-                  ))}
-              </div>
-          )}
-      </motion.div>
     </div>
   );
 }

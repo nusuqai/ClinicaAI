@@ -8,6 +8,8 @@ import DashboardLayout from './components/DashboardLayout';
 import DashboardHome from './components/DashboardHome';
 import CalendarView from './components/dashboard/CalendarView';
 import ProfileView from './components/dashboard/ProfileView';
+import MedicalHistoryView from './components/dashboard/MedicalHistoryView';
+import ChatbotWidget from './components/chatbot/ChatbotWidget';
 
 function PrivateRoute({ children, session, loading }) {
   if (loading) {
@@ -61,9 +63,11 @@ export default function App() {
             <Route index element={<DashboardHome session={session} />} />
             <Route path="appointments" element={<CalendarView session={session} />} />
             <Route path="profile" element={<ProfileView session={session} />} />
+            <Route path="medical-history" element={<MedicalHistoryView session={session} />} />
           </Route>
         </Routes>
       </div>
+      <ChatbotWidget />
     </Router>
   );
 }
