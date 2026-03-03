@@ -113,34 +113,40 @@ function DoctorProfile({ doctor }) {
 // ─── Slot Grid ───
 function SlotGrid({ slots, onFillInput }) {
   if (!slots.length) return <EmptyState text="لا توجد مواعيد متاحة حاليا" />;
+
+  // Try common field names for the time value
+  const getStartDate = (slot) => {
+    const raw = slot.starts_at || slot.start_time || slot.time || slot.date || slot.start;
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  // Filter to only valid dates
+  const validSlots = slots.filter(s => getStartDate(s) !== null);
+  if (!validSlots.length) return <EmptyState text="لا توجد مواعيد متاحة حاليا" />;
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
-        {slots.slice(0, 12).map((slot, i) => {
-          const start = slot.starts_at ? new Date(slot.starts_at) : null;
-          const fillText = start
-            ? `احجز موعد يوم ${start.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' })} الساعة ${start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
-            : '';
+        {validSlots.slice(0, 12).map((slot, i) => {
+          const start = getStartDate(slot);
+          const fillText = `احجز موعد يوم ${start.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' })} الساعة ${start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
           return (
             <div
               key={slot.id || i}
-              onClick={() => fillText && onFillInput?.(fillText)}
+              onClick={() => onFillInput?.(fillText)}
               className="bg-white/60 border border-primary/10 rounded-lg px-3 py-2 text-xs font-sans cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors"
               dir="ltr"
-            >              {start ? (
-                <>
-                  <span className="font-bold text-primary">{start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
-                  <span className="text-text/40 block">{start.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}</span>
-                </>
-              ) : (
-                <span className="text-text/50">موعد متاح</span>
-              )}
+            >
+              <span className="font-bold text-primary">{start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+              <span className="text-text/40 block">{start.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}</span>
             </div>
           );
         })}
       </div>
-      {slots.length > 12 && (
-        <p className="text-xs text-text/40 text-center font-sans">+{slots.length - 12} موعد آخر</p>
+      {validSlots.length > 12 && (
+        <p className="text-xs text-text/40 text-center font-sans">+{validSlots.length - 12} موعد آخر</p>
       )}
     </div>
   );
