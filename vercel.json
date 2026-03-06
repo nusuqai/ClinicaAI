@@ -3,6 +3,10 @@
     {
       "source": "/clinica/:path*",
       "destination": "http://prepared-dyanna-nusuqai-demo-1a5b158b.koyeb.app/clinica/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
