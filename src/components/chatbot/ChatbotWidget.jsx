@@ -2,7 +2,23 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Loader2, Bot, User, Sparkles } from 'lucide-react';
 import { sendClinicaQuery } from '../../lib/clinicaApi';
+import { supabase } from '../../lib/supabase';
 import ToolResultCard from './ToolResultCard';
+import AuthPromptCard from './AuthPromptCard';
+
+const STORAGE_KEY_MESSAGES = 'clinica_chat_messages';
+const STORAGE_KEY_SESSION = 'clinica_chat_session';
+
+function loadStored(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch { return fallback; }
+}
+
+function rehydrateMessages(msgs) {
+  return msgs.map(m => ({ ...m, timestamp: m.timestamp ? new Date(m.timestamp) : new Date() }));
+}
 
 const SUGGESTED_QUERIES = [
   { label: 'ابحث عن طبيب', query: 'ابحث لي عن طبيب' },
@@ -13,14 +29,47 @@ const SUGGESTED_QUERIES = [
 
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => rehydrateMessages(loadStored(STORAGE_KEY_MESSAGES, [])));
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
+  const [sessionId, setSessionId] = useState(() => loadStored(STORAGE_KEY_SESSION, null));
   const [hasNewMessage, setHasNewMessage] = useState(false);
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Persist messages to localStorage
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages)); } catch {}
+  }, [messages]);
+
+  // Persist sessionId to localStorage
+  useEffect(() => {
+    try {
+      if (sessionId) localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(sessionId));
+      else localStorage.removeItem(STORAGE_KEY_SESSION);
+    } catch {}
+  }, [sessionId]);
+
+  // Listen for auth state changes: when user signs in, drop the old
+  // (unauthenticated) MCP session so the next query creates a fresh one
+  // that carries the JWT. Chat history is kept.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        setSessionId(null);
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            text: 'تم تسجيل الدخول بنجاح! يمكنك الآن الوصول إلى جميع الخدمات.',
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -54,20 +103,14 @@ export default function ChatbotWidget() {
         setSessionId(response.sessionId);
       }
 
-      // Check if server requests login
-      if (
-        response.text?.includes('log in') ||
-        response.text?.includes('سجل دخولك') ||
-        response.text?.includes('Authentication required') ||
-        response.text?.includes('Please log in')
-      ) {
+      // Server requires authentication — show inline auth prompt
+      if (response.type === 'auth_required') {
         setMessages(prev => [
           ...prev,
           {
-            role: 'assistant',
-            text: 'يرجى تسجيل الدخول أولا للوصول إلى هذه الخدمة.',
+            role: 'auth_prompt',
+            text: response.message,
             timestamp: new Date(),
-            requiresLogin: true,
           },
         ]);
         return;
@@ -172,9 +215,13 @@ export default function ChatbotWidget() {
               )}
 
               {/* Message bubbles */}
-              {messages.map((msg, i) => (
-                <MessageBubble key={i} message={msg} onFillInput={(text) => { setInput(text); inputRef.current?.focus(); }} />
-              ))}
+              {messages.map((msg, i) =>
+                msg.role === 'auth_prompt' ? (
+                  <AuthPromptCard key={i} message={msg.text} />
+                ) : (
+                  <MessageBubble key={i} message={msg} onFillInput={(text) => { setInput(text); inputRef.current?.focus(); }} />
+                )
+              )}
 
               {/* Loading indicator */}
               {isLoading && (
@@ -276,16 +323,6 @@ function MessageBubble({ message, onFillInput }) {
               : 'bg-white text-text border border-primary/5 shadow-sm rounded-tr-sm'
         }`}>
           {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
-
-          {/* Login prompt */}
-          {message.requiresLogin && (
-            <a
-              href="/login"
-              className="inline-block mt-2 text-xs font-medium text-accent underline underline-offset-2 hover:text-primary transition-colors"
-            >
-              تسجيل الدخول
-            </a>
-          )}
         </div>
 
         {/* Tool Results */}
