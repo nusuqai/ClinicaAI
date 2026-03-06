@@ -37,6 +37,8 @@ export default function ChatbotWidget() {
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const wasAuthenticatedRef = useRef(null); // null = unknown, true/false = tracked
+  const pendingContextRef = useRef(null);
 
   // Persist messages to localStorage
   useEffect(() => {
@@ -51,21 +53,43 @@ export default function ChatbotWidget() {
     } catch {}
   }, [sessionId]);
 
-  // Listen for auth state changes: when user signs in, drop the old
-  // (unauthenticated) MCP session so the next query creates a fresh one
-  // that carries the JWT. Chat history is kept.
+  // Listen for auth state changes. Only react to genuine login transitions
+  // (was unauthenticated -> now authenticated), NOT token refreshes.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
+    // Seed the ref with current auth state so we can detect transitions
+    supabase.auth.getSession().then(({ data }) => {
+      wasAuthenticatedRef.current = !!data?.session;
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const isNowAuthenticated = !!session;
+      const wasPreviouslyAuthenticated = wasAuthenticatedRef.current;
+
+      // Update the ref for next time
+      wasAuthenticatedRef.current = isNowAuthenticated;
+
+      // Only react on a real transition: was NOT authenticated -> now IS
+      if (event === 'SIGNED_IN' && wasPreviouslyAuthenticated === false) {
+        // Build a context summary from previous messages so the AI
+        // remembers the conversation after session reset
+        setMessages(prev => {
+          const contextLines = prev
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .map(m => `${m.role === 'user' ? 'Patient' : 'Assistant'}: ${m.text}`)
+            .join('\n');
+          if (contextLines) {
+            pendingContextRef.current = contextLines;
+          }
+          return [
+            ...prev,
+            {
+              role: 'assistant',
+              text: 'تم تسجيل الدخول بنجاح! يمكنك الآن الوصول إلى جميع الخدمات. يمكنك متابعة ما كنت تفعله.',
+              timestamp: new Date(),
+            },
+          ];
+        });
         setSessionId(null);
-        setMessages(prev => [
-          ...prev,
-          {
-            role: 'assistant',
-            text: 'تم تسجيل الدخول بنجاح! يمكنك الآن الوصول إلى جميع الخدمات.',
-            timestamp: new Date(),
-          },
-        ]);
       }
     });
     return () => subscription.unsubscribe();
@@ -96,7 +120,13 @@ export default function ChatbotWidget() {
     setIsLoading(true);
 
     try {
-      const response = await sendClinicaQuery(query, sessionId);
+      let fullQuery = query;
+      if (pendingContextRef.current) {
+        fullQuery = `[Previous conversation context - continue from where we left off]:\n${pendingContextRef.current}\n\n[Current request]: ${query}`;
+        pendingContextRef.current = null;
+      }
+
+      const response = await sendClinicaQuery(fullQuery, sessionId);
 
       // Save session ID from first response
       if (response.sessionId) {
