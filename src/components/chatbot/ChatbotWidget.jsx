@@ -6,8 +6,17 @@ import { supabase } from '../../lib/supabase';
 import ToolResultCard from './ToolResultCard';
 import AuthPromptCard from './AuthPromptCard';
 
-const STORAGE_KEY_MESSAGES = 'clinica_chat_messages';
-const STORAGE_KEY_SESSION = 'clinica_chat_session';
+const STORAGE_PREFIX_MESSAGES = 'clinica_chat_';
+const STORAGE_PREFIX_SESSION = 'clinica_session_';
+const ANON_KEY = 'anon';
+
+function storageKeys(userId) {
+  const key = userId || ANON_KEY;
+  return {
+    messages: STORAGE_PREFIX_MESSAGES + key,
+    session: STORAGE_PREFIX_SESSION + key,
+  };
+}
 
 function loadStored(key, fallback) {
   try {
@@ -20,6 +29,14 @@ function rehydrateMessages(msgs) {
   return msgs.map(m => ({ ...m, timestamp: m.timestamp ? new Date(m.timestamp) : new Date() }));
 }
 
+function getInitialUserId() {
+  // Check if there's a cached user ID from a previous session
+  try {
+    const raw = localStorage.getItem('clinica_current_uid');
+    return raw || null;
+  } catch { return null; }
+}
+
 const SUGGESTED_QUERIES = [
   { label: 'ابحث عن طبيب', query: 'ابحث لي عن طبيب' },
   { label: 'مواعيدي', query: 'اعرض مواعيدي' },
@@ -29,32 +46,46 @@ const SUGGESTED_QUERIES = [
 
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState(() => rehydrateMessages(loadStored(STORAGE_KEY_MESSAGES, [])));
+  const [currentUserId, setCurrentUserId] = useState(getInitialUserId);
+  const keys = storageKeys(currentUserId);
+  const [messages, setMessages] = useState(() => rehydrateMessages(loadStored(keys.messages, [])));
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(() => loadStored(STORAGE_KEY_SESSION, null));
+  const [sessionId, setSessionId] = useState(() => loadStored(keys.session, null));
   const [hasNewMessage, setHasNewMessage] = useState(false);
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
-  const wasAuthenticatedRef = useRef(null); // null = unknown, true/false = tracked
+  const wasAuthenticatedRef = useRef(null);
   const pendingContextRef = useRef(null);
 
-  // Persist messages to localStorage
+  // Persist messages to the current user's localStorage key
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages)); } catch {}
-  }, [messages]);
+    const k = storageKeys(currentUserId);
+    try { localStorage.setItem(k.messages, JSON.stringify(messages)); } catch {}
+  }, [messages, currentUserId]);
 
-  // Persist sessionId to localStorage
+  // Persist sessionId to the current user's localStorage key
   useEffect(() => {
+    const k = storageKeys(currentUserId);
     try {
-      if (sessionId) localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(sessionId));
-      else localStorage.removeItem(STORAGE_KEY_SESSION);
+      if (sessionId) localStorage.setItem(k.session, JSON.stringify(sessionId));
+      else localStorage.removeItem(k.session);
     } catch {}
-  }, [sessionId]);
+  }, [sessionId, currentUserId]);
+
+  // Auth state listener: swap storage when user changes
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
+      const uid = data?.session?.user?.id || null;
       wasAuthenticatedRef.current = !!data?.session;
+      if (uid !== currentUserId) {
+        setCurrentUserId(uid);
+        try { localStorage.setItem('clinica_current_uid', uid || ''); } catch {}
+        const k = storageKeys(uid);
+        setMessages(rehydrateMessages(loadStored(k.messages, [])));
+        setSessionId(loadStored(k.session, null));
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -63,24 +94,55 @@ export default function ChatbotWidget() {
       wasAuthenticatedRef.current = isNowAuthenticated;
 
       if (event === 'SIGNED_IN' && wasPreviouslyAuthenticated === false) {
-        setMessages(prev => {
-          const contextLines = prev
+        const uid = session.user.id;
+        const anonKeys = storageKeys(null);
+        const userKeys = storageKeys(uid);
+
+        // Migrate anonymous conversation to the user's storage if user has no existing history
+        const existingUserMsgs = loadStored(userKeys.messages, []);
+        const anonMsgs = loadStored(anonKeys.messages, []);
+
+        let mergedMessages;
+        if (existingUserMsgs.length === 0 && anonMsgs.length > 0) {
+          // First login with an active anon conversation: migrate it
+          mergedMessages = [...anonMsgs];
+          // Build context for the new authenticated session
+          const contextLines = anonMsgs
             .filter(m => m.role === 'user' || m.role === 'assistant')
             .map(m => `${m.role === 'user' ? 'Patient' : 'Assistant'}: ${m.text}`)
             .join('\n');
-          if (contextLines) {
-            pendingContextRef.current = contextLines;
-          }
-          return [
-            ...prev,
-            {
-              role: 'assistant',
-              text: 'تم تسجيل الدخول بنجاح! يمكنك الآن الوصول إلى جميع الخدمات. يمكنك متابعة ما كنت تفعله.',
-              timestamp: new Date(),
-            },
-          ];
+          if (contextLines) pendingContextRef.current = contextLines;
+        } else {
+          mergedMessages = existingUserMsgs;
+        }
+
+        // Add login confirmation
+        mergedMessages.push({
+          role: 'assistant',
+          text: 'تم تسجيل الدخول بنجاح! يمكنك الآن الوصول إلى جميع الخدمات.',
+          timestamp: new Date().toISOString(),
         });
+
+        // Clear anonymous storage
+        try {
+          localStorage.removeItem(anonKeys.messages);
+          localStorage.removeItem(anonKeys.session);
+        } catch {}
+
+        // Switch to user-scoped storage
+        setCurrentUserId(uid);
+        try { localStorage.setItem('clinica_current_uid', uid); } catch {}
+        setMessages(rehydrateMessages(mergedMessages));
         setSessionId(null);
+      }
+
+      if (event === 'SIGNED_OUT') {
+        // Reset to anonymous empty chat
+        setCurrentUserId(null);
+        try { localStorage.removeItem('clinica_current_uid'); } catch {}
+        setMessages([]);
+        setSessionId(null);
+        pendingContextRef.current = null;
       }
     });
     return () => subscription.unsubscribe();

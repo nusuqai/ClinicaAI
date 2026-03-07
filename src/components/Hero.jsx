@@ -60,7 +60,7 @@ export default function Hero() {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 flex flex-col justify-end h-full pb-40 xl:pb-32">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 flex flex-col justify-end h-full pt-32 pb-40 xl:pb-32">
         <motion.div 
           className="max-w-3xl space-y-8"
           variants={containerVariants}
