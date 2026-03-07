@@ -1,5 +1,5 @@
-import React from 'react';
-import { Star, Calendar, Clock, User, CheckCircle2, XCircle, Activity, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, Calendar, Clock, User, CheckCircle2, XCircle, Activity, Sparkles, ChevronDown, Briefcase, Users } from 'lucide-react';
 
 /**
  * Renders rich UI for a single tool result based on toolName.
@@ -48,35 +48,105 @@ export default function ToolResultCard({ toolName, data, onFillInput }) {
   }
 }
 
+// ─── Doctor Avatar ───
+function DoctorAvatar({ doc, size = 'sm' }) {
+  const [imgError, setImgError] = useState(false);
+  const sizes = size === 'lg'
+    ? 'w-14 h-14 rounded-2xl text-lg'
+    : 'w-10 h-10 rounded-xl text-sm';
+
+  if (doc.photo_url && !imgError) {
+    return (
+      <img
+        src={doc.photo_url}
+        alt={doc.full_name}
+        onError={() => setImgError(true)}
+        className={`${sizes} object-cover shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div className={`${sizes} bg-accent/10 flex items-center justify-center text-accent font-bold shrink-0`}>
+      {doc.full_name?.charAt(0) || '?'}
+    </div>
+  );
+}
+
 // ─── Doctor List ───
 function DoctorList({ doctors, onFillInput }) {
   if (!doctors.length) return <EmptyState text="لم يتم العثور على أطباء" />;
-  // Deduplicate by id
   const unique = doctors.filter((doc, i, arr) => doc.id ? arr.findIndex(d => d.id === doc.id) === i : true);
   return (
     <div className="space-y-2">
       {unique.slice(0, 5).map((doc, i) => (
-        <div
-          key={doc.id || i}
-          onClick={() => onFillInput?.(`اعرض مواعيد الدكتور ${doc.full_name}`)}
-          className="flex items-center gap-3 bg-white/60 rounded-xl p-3 border border-primary/5 cursor-pointer hover:border-accent/30 hover:bg-accent/5 transition-colors">
-          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent font-bold text-sm shrink-0">
-            {doc.full_name?.charAt(0) || '?'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-heading font-bold text-sm text-primary truncate">{doc.full_name_ar || doc.full_name}</p>
-            <p className="text-xs font-sans text-text/50">{doc.specialty_ar || doc.specialty}</p>
-          </div>
-          {doc.rating && (
-            <div className="flex items-center gap-1 text-xs shrink-0">
-              <Star size={12} className="fill-accent text-accent" />
-              <span className="font-bold text-primary">{doc.rating}</span>
-            </div>
-          )}
-        </div>
+        <DoctorListItem key={doc.id || i} doc={doc} onFillInput={onFillInput} />
       ))}
       {doctors.length > 5 && (
         <p className="text-xs text-text/40 text-center font-sans">+{doctors.length - 5} المزيد</p>
+      )}
+    </div>
+  );
+}
+
+function DoctorListItem({ doc, onFillInput }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="bg-white/60 rounded-xl border border-primary/5 overflow-hidden transition-colors hover:border-accent/30">
+      {/* Main row */}
+      <div
+        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/5 transition-colors"
+        onClick={() => onFillInput?.(`اعرض مواعيد الدكتور ${doc.full_name}`)}
+      >
+        <DoctorAvatar doc={doc} />
+        <div className="flex-1 min-w-0">
+          <p className="font-heading font-bold text-sm text-primary truncate">{doc.full_name_ar || doc.full_name}</p>
+          <p className="text-xs font-sans text-text/50">{doc.specialty_ar || doc.specialty}</p>
+        </div>
+        {doc.rating && (
+          <div className="flex items-center gap-1 text-xs shrink-0">
+            <Star size={12} className="fill-accent text-accent" />
+            <span className="font-bold text-primary">{doc.rating}</span>
+          </div>
+        )}
+        {/* Profile expand toggle */}
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(prev => !prev); }}
+          className={`w-7 h-7 rounded-lg flex items-center justify-center text-text/40 hover:bg-accent/10 hover:text-accent transition-all shrink-0 ${expanded ? 'bg-accent/10 text-accent rotate-180' : ''}`}
+          title="عرض الملف الشخصي"
+        >
+          <ChevronDown size={14} />
+        </button>
+      </div>
+
+      {/* Expanded profile */}
+      {expanded && (
+        <div className="px-3 pb-3 pt-0 border-t border-primary/5 space-y-2 animate-in slide-in-from-top-1">
+          {doc.bio && <p className="text-xs font-sans text-text/60 leading-relaxed pt-2">{doc.bio_ar || doc.bio}</p>}
+          <div className="flex flex-wrap gap-3 text-[11px] font-sans text-text/50">
+            {doc.years_experience && (
+              <span className="flex items-center gap-1">
+                <Briefcase size={11} className="text-accent" /> {doc.years_experience} سنة خبرة
+              </span>
+            )}
+            {doc.patients_count && (
+              <span className="flex items-center gap-1">
+                <Users size={11} className="text-accent" /> {doc.patients_count} مريض
+              </span>
+            )}
+            {doc.education && (
+              <span className="flex items-center gap-1 text-text/40">
+                {doc.education}
+              </span>
+            )}
+          </div>
+          {doc.availability_note && (
+            <p className="text-[11px] font-sans text-accent flex items-center gap-1">
+              <Clock size={11} /> {doc.availability_note_ar || doc.availability_note}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -88,19 +158,27 @@ function DoctorProfile({ doctor }) {
   return (
     <div className="bg-white/60 rounded-xl p-4 border border-primary/5 space-y-2">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent font-bold text-lg">
-          {doctor.full_name?.charAt(0) || '?'}
-        </div>
+        <DoctorAvatar doc={doctor} size="lg" />
         <div>
           <p className="font-heading font-bold text-primary">{doctor.full_name_ar || doctor.full_name}</p>
           <p className="text-xs font-sans text-text/50">{doctor.specialty_ar || doctor.specialty}</p>
         </div>
       </div>
       {doctor.bio && <p className="text-xs font-sans text-text/60 leading-relaxed">{doctor.bio_ar || doctor.bio}</p>}
-      <div className="flex gap-3 text-xs font-sans text-text/50">
+      <div className="flex flex-wrap gap-3 text-xs font-sans text-text/50">
         {doctor.rating && (
           <span className="flex items-center gap-1">
             <Star size={12} className="fill-accent text-accent" /> {doctor.rating}
+          </span>
+        )}
+        {doctor.years_experience && (
+          <span className="flex items-center gap-1">
+            <Briefcase size={12} className="text-accent" /> {doctor.years_experience} سنة خبرة
+          </span>
+        )}
+        {doctor.patients_count && (
+          <span className="flex items-center gap-1">
+            <Users size={12} className="text-accent" /> {doctor.patients_count} مريض
           </span>
         )}
         {doctor.availability_note && (
