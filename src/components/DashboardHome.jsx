@@ -24,7 +24,7 @@ export default function DashboardHome() {
         if (error) throw error;
 
         const now = new Date();
-        const upcoming = data.filter(a => new Date(a.scheduled_at) >= now);
+        const upcoming = data.filter(a => new Date(a.scheduled_at) >= now && a.status !== 'cancelled' && a.status !== 'completed');
         const past = data.filter(a => new Date(a.scheduled_at) < now);
 
         setStats({ upcoming: upcoming.length, past: past.length });
