@@ -1,7 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { LayoutDashboard, Calendar, User, LogOut, Menu, X, Loader2, Activity } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { Outlet, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import {
+  LayoutDashboard,
+  Calendar,
+  User,
+  LogOut,
+  Menu,
+  X,
+  Loader2,
+  Activity,
+} from "lucide-react";
 
 export default function DashboardLayout() {
   const [session, setSession] = useState(null);
@@ -11,8 +20,25 @@ export default function DashboardLayout() {
   const location = useLocation();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
+
+      // Fetch user profile with the related doctors row embedded.
+      // If userProfile.doctors has a value this user is a doctor.
+      if (session?.user?.id) {
+        const { data: userProfile, error: userError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        if (userProfile?.doctor) {
+          setLoading(false);
+          navigate("/doctor-dashboard", { replace: true });
+          return;
+        }
+      }
+
       setLoading(false);
     });
 
@@ -27,7 +53,7 @@ export default function DashboardLayout() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/');
+    navigate("/");
   };
 
   if (loading) {
@@ -43,15 +69,25 @@ export default function DashboardLayout() {
   }
 
   const navItems = [
-    { label: 'نظرة عامة', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
-    { label: 'مواعيدي', path: '/dashboard/appointments', icon: <Calendar size={20} /> },
-    { label: 'السجل الطبي', path: '/dashboard/medical-history', icon: <Activity size={20} /> },
-    { label: 'الملف الشخصي', path: '/dashboard/profile', icon: <User size={20} /> },
+    {
+      label: "نظرة عامة",
+      path: "/dashboard",
+      icon: <LayoutDashboard size={20} />,
+    },
+    {
+      label: "مواعيدي",
+      path: "/dashboard/appointments",
+      icon: <Calendar size={20} />,
+    },
+    {
+      label: "الملف الشخصي",
+      path: "/dashboard/profile",
+      icon: <User size={20} />,
+    },
   ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
-      
       {/* Mobile Header */}
       <div className="md:hidden bg-primary text-white p-4 flex justify-between items-center sticky top-0 z-30">
         <div className="font-heading font-bold text-xl">لوحة التحكم</div>
@@ -61,11 +97,20 @@ export default function DashboardLayout() {
       </div>
 
       {/* Sidebar */}
-      <aside className={`fixed md:sticky top-0 right-0 h-screen w-64 bg-primary text-white flex flex-col transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
+      <aside
+        className={`fixed md:sticky top-0 right-0 h-screen w-64 bg-primary text-white flex flex-col transition-transform duration-300 z-40 ${sidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"}`}
+      >
         <div className="p-6">
-          <a href="/" className="flex flex-col items-center justify-center gap-2 mb-8 group">
+          <a
+            href="/"
+            className="flex flex-col items-center justify-center gap-2 mb-8 group"
+          >
             <div className="bg-primary/20 p-3 rounded-2xl group-hover:bg-primary/30 transition-colors">
-               <img src="/logo.png" alt="Clinica AI Logo" className="h-16 w-auto brightness-0 invert opacity-90 object-contain" />
+              <img
+                src="/logo.png"
+                alt="Clinica AI Logo"
+                className="h-16 w-auto brightness-0 invert opacity-90 object-contain"
+              />
             </div>
             <span className="font-heading font-bold text-2xl text-white tracking-wide">
               Clinica <span className="text-accent">AI</span>
@@ -75,7 +120,9 @@ export default function DashboardLayout() {
             <div className="w-20 h-20 bg-accent/20 rounded-full mx-auto flex items-center justify-center mb-3 text-accent font-heading text-2xl border flex-shrink-0 border-accent/50">
               {session.user.email?.charAt(0).toUpperCase()}
             </div>
-            <p className="font-sans font-medium text-white/90 truncate px-2 text-sm">{session.user.email}</p>
+            <p className="font-sans font-medium text-white/90 truncate px-2 text-sm">
+              {session.user.email}
+            </p>
           </div>
         </div>
 
@@ -91,9 +138,9 @@ export default function DashboardLayout() {
                   setSidebarOpen(false);
                 }}
                 className={`flex items-center gap-3 w-full text-right px-4 py-3 rounded-xl font-sans font-medium transition-colors ${
-                  isActive 
-                    ? 'bg-accent text-primary' 
-                    : 'text-white/70 hover:bg-white/10 hover:text-white'
+                  isActive
+                    ? "bg-accent text-primary"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 {item.icon}
@@ -116,7 +163,7 @@ export default function DashboardLayout() {
 
       {/* Overlay for mobile sidebar */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
@@ -125,7 +172,7 @@ export default function DashboardLayout() {
       {/* Main Content */}
       <main className="flex-1 p-6 lg:p-10 relative">
         <div className="max-w-5xl mx-auto h-full">
-            <Outlet context={{ session }} />
+          <Outlet context={{ session }} />
         </div>
       </main>
     </div>

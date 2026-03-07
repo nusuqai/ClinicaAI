@@ -1,15 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase } from './lib/supabase';
+import { useEffect, useState } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { supabase } from "./lib/supabase";
 
-import LandingPage from './pages/LandingPage';
-import Auth from './components/Auth';
-import DashboardLayout from './components/DashboardLayout';
-import DashboardHome from './components/DashboardHome';
-import CalendarView from './components/dashboard/CalendarView';
-import ProfileView from './components/dashboard/ProfileView';
-import MedicalHistoryView from './components/dashboard/MedicalHistoryView';
-import ChatbotWidget from './components/chatbot/ChatbotWidget';
+import LandingPage from "./pages/LandingPage";
+import Auth from "./components/Auth";
+import DashboardLayout from "./components/DashboardLayout";
+import DashboardHome from "./components/DashboardHome";
+import CalendarView from "./components/dashboard/CalendarView";
+import ProfileView from "./components/dashboard/ProfileView";
+import ChatbotWidget from "./components/chatbot/ChatbotWidget";
+import DoctorDashboardLayout from "./components/doctor/DoctorDashboardLayout";
+import DoctorHome from "./components/doctor/DoctorHome";
+import DoctorAppointments from "./components/doctor/DoctorAppointments";
+import DoctorPatients from "./components/doctor/DoctorPatients";
 
 function PrivateRoute({ children, session, loading }) {
   if (loading) {
@@ -50,20 +58,47 @@ export default function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={
-            !loading && session ? <Navigate to="/dashboard" replace /> : <Auth />
-          } />
+          <Route
+            path="/login"
+            element={
+              !loading && session ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Auth />
+              )
+            }
+          />
 
-          {/* Protected Dashboard Routes */}
-          <Route path="/dashboard" element={
-            <PrivateRoute session={session} loading={loading}>
-              <DashboardLayout />
-            </PrivateRoute>
-          }>
+          {/* Protected Patient Dashboard */}
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute session={session} loading={loading}>
+                <DashboardLayout />
+              </PrivateRoute>
+            }
+          >
             <Route index element={<DashboardHome session={session} />} />
-            <Route path="appointments" element={<CalendarView session={session} />} />
+            <Route
+              path="appointments"
+              element={<CalendarView session={session} />}
+            />
             <Route path="profile" element={<ProfileView session={session} />} />
-            <Route path="medical-history" element={<MedicalHistoryView session={session} />} />
+          </Route>
+
+          {/* Protected Doctor Dashboard */}
+          <Route
+            path="/doctor-dashboard"
+            element={
+              <PrivateRoute session={session} loading={loading}>
+                <DoctorDashboardLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<DoctorHome />} />
+            <Route path="appointments" element={<DoctorAppointments />} />
+            <Route path="patients" element={<DoctorPatients />} />
+            <Route path="profile" element={<ProfileView session={session} />} />
           </Route>
         </Routes>
       </div>
