@@ -18,6 +18,9 @@ export default function ToolResultCard({ toolName, data, onFillInput }) {
     case 'get_available_slots':
       return <SlotGrid slots={Array.isArray(data) ? data : (data.slots || [])} onFillInput={onFillInput} />;
 
+    case 'get_doctor_available_days':
+      return <DoctorDaysCard data={data} onFillInput={onFillInput} />;
+
     case 'book_appointment':
       return <ConfirmationCard type="booked" data={data} />;
 
@@ -116,7 +119,7 @@ function SlotGrid({ slots, onFillInput }) {
 
   // Try common field names for the time value
   const getStartDate = (slot) => {
-    const raw = slot.starts_at || slot.start_time || slot.time || slot.date || slot.start;
+    const raw = slot.starts_at || slot.start_time || slot.time || slot.date || slot.start || slot.starts_at_display;
     if (!raw) return null;
     const d = new Date(raw);
     return isNaN(d.getTime()) ? null : d;
@@ -152,6 +155,43 @@ function SlotGrid({ slots, onFillInput }) {
   );
 }
 
+// ─── Doctor Available Days ───
+function DoctorDaysCard({ data, onFillInput }) {
+  const days = data?.days || [];
+  if (!days.length) return <EmptyState text="لا توجد أيام متاحة حاليا" />;
+
+  const doctorName = data?.doctor_name_ar || data?.doctor_name || 'الطبيب';
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {days.slice(0, 14).map((day, i) => {
+          const dateObj = new Date(day.date + 'T00:00:00');
+          const dayNum = dateObj.getDate();
+          const monthShort = dateObj.toLocaleDateString('ar-EG', { month: 'short' });
+          const weekday = day.day_name_ar?.split('،')[0] || dateObj.toLocaleDateString('ar-EG', { weekday: 'short' });
+
+          return (
+            <div
+              key={day.date || i}
+              onClick={() => onFillInput?.(`اعرض مواعيد ${doctorName} يوم ${day.day_name_ar || day.day_name}`)}
+              className="bg-white/60 border border-primary/10 rounded-xl px-3 py-2.5 text-center cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors min-w-[70px]"
+            >
+              <span className="text-[10px] text-text/40 font-sans block">{weekday}</span>
+              <span className="font-heading font-bold text-lg text-primary block leading-tight">{dayNum}</span>
+              <span className="text-[10px] text-text/40 font-sans block">{monthShort}</span>
+              <span className="text-[10px] text-accent font-sans font-medium block mt-0.5">{day.slots_count} موعد</span>
+            </div>
+          );
+        })}
+      </div>
+      {days.length > 14 && (
+        <p className="text-xs text-text/40 text-center font-sans">+{days.length - 14} يوم آخر</p>
+      )}
+    </div>
+  );
+}
+
 // ─── Appointment List ───
 function AppointmentList({ appointments }) {
   if (!appointments.length) return <EmptyState text="لا توجد مواعيد" />;
@@ -175,7 +215,7 @@ function AppointmentList({ appointments }) {
             <div className="flex-1 min-w-0">
               <p className="font-heading font-bold text-sm text-primary truncate">{apt.doctor_name || 'طبيب'}</p>
               <p className="text-xs font-sans text-text/50">
-                {apt.scheduled_at ? new Date(apt.scheduled_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}
+                {apt.scheduled_at_display || (apt.scheduled_at ? new Date(apt.scheduled_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '')}
               </p>
             </div>
             <span className={`px-2 py-0.5 rounded-md text-[10px] font-sans font-medium ${s.color}`}>{s.label}</span>

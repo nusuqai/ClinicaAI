@@ -52,11 +52,7 @@ export default function ChatbotWidget() {
       else localStorage.removeItem(STORAGE_KEY_SESSION);
     } catch {}
   }, [sessionId]);
-
-  // Listen for auth state changes. Only react to genuine login transitions
-  // (was unauthenticated -> now authenticated), NOT token refreshes.
   useEffect(() => {
-    // Seed the ref with current auth state so we can detect transitions
     supabase.auth.getSession().then(({ data }) => {
       wasAuthenticatedRef.current = !!data?.session;
     });
@@ -64,14 +60,9 @@ export default function ChatbotWidget() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const isNowAuthenticated = !!session;
       const wasPreviouslyAuthenticated = wasAuthenticatedRef.current;
-
-      // Update the ref for next time
       wasAuthenticatedRef.current = isNowAuthenticated;
 
-      // Only react on a real transition: was NOT authenticated -> now IS
       if (event === 'SIGNED_IN' && wasPreviouslyAuthenticated === false) {
-        // Build a context summary from previous messages so the AI
-        // remembers the conversation after session reset
         setMessages(prev => {
           const contextLines = prev
             .filter(m => m.role === 'user' || m.role === 'assistant')
