@@ -172,7 +172,7 @@ export default function ChatbotWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-24 left-5 z-50 w-[380px] max-w-[calc(100vw-40px)] h-[560px] max-h-[calc(100vh-120px)] bg-background rounded-3xl shadow-2xl border border-primary/10 flex flex-col overflow-hidden"
+            className="fixed bottom-24 left-5 z-50 w-[480px] max-w-[calc(100vw-40px)] h-[700px] max-h-[calc(100vh-120px)] bg-background rounded-3xl shadow-2xl border border-primary/10 flex flex-col overflow-hidden"
             dir="rtl"
           >
             {/* Header */}
