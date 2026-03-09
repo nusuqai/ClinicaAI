@@ -7,12 +7,26 @@ import ToolResultCard from './ToolResultCard';
 import AuthPromptCard from './AuthPromptCard';
 
 
-const SUGGESTED_QUERIES = [
-  { label: 'ابحث عن طبيب', query: 'ابحث لي عن طبيب' },
-  { label: 'مواعيدي', query: 'اعرض مواعيدي' },
-  { label: 'سجلي الطبي', query: 'اعرض سجلي الطبي' },
-  { label: 'الأطباء المتاحين', query: 'اعرض الأطباء المتاحين' },
-];
+const SUGGESTED_QUERIES = {
+  guest: [
+    { label: 'ابحث عن طبيب', query: 'ابحث لي عن طبيب' },
+    { label: 'الأطباء المتاحين', query: 'اعرض الأطباء المتاحين' },
+    { label: 'الأقسام الطبية', query: 'اعرض الأقسام الطبية' },
+    { label: 'كيف أحجز موعد؟', query: 'كيف يمكنني حجز موعد؟' },
+  ],
+  patient: [
+    { label: 'ابحث عن طبيب', query: 'ابحث لي عن طبيب' },
+    { label: 'مواعيدي', query: 'اعرض مواعيدي' },
+    { label: 'سجلي الطبي', query: 'اعرض سجلي الطبي' },
+    { label: 'الأطباء المتاحين', query: 'اعرض الأطباء المتاحين' },
+  ],
+  doctor: [
+    { label: 'مواعيدي اليوم', query: 'اعرض مواعيدي لهذا اليوم' },
+    { label: 'قائمة مرضاي', query: 'اعرض قائمة مرضاي' },
+    { label: 'الطلبات المعلقة', query: 'اعرض الطلبات المعلقة' },
+    { label: 'جدولي الأسبوعي', query: 'اعرض جدولي الأسبوعي' },
+  ],
+};
 
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -234,7 +248,7 @@ export default function ChatbotWidget() {
                     أنا مساعدك الطبي الذكي. يمكنني مساعدتك في البحث عن أطباء، حجز المواعيد، وعرض سجلك الطبي.
                   </p>
                   <div className="flex flex-wrap justify-center gap-2 w-full">
-                    {SUGGESTED_QUERIES.map((sq, i) => (
+                    {(SUGGESTED_QUERIES[userRole ?? 'guest'] ?? SUGGESTED_QUERIES.guest).map((sq, i) => (
                       <button
                         key={i}
                         onClick={() => { setInput(sq.query); inputRef.current?.focus(); }}
