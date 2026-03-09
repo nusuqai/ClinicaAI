@@ -8,7 +8,7 @@ const BACKEND_URL = import.meta.env.VITE_CLINICA_BACKEND_URL || '';
  * @param {string|null} sessionId - MCP session ID from previous response
  * @returns {Promise<{sessionId?: string, text: string, toolResults?: Array}>}
  */
-export async function sendClinicaQuery(query, sessionId = null) {
+export async function sendClinicaQuery(query, sessionId = null, userRole = null) {
   const headers = { 'Content-Type': 'application/json' };
 
   if (sessionId) {
@@ -25,10 +25,18 @@ export async function sendClinicaQuery(query, sessionId = null) {
     // No auth available, continue without token
   }
 
+  let fullQuery = query;
+  if (userRole) {
+    const roleContext = userRole === 'doctor'
+      ? 'You are speaking with a licensed doctor. Provide medically accurate, professional-level information and prioritize clinical tools (appointments, patients, schedules).'
+      : 'You are speaking with a patient. Provide clear, friendly, patient-appropriate guidance and health information.';
+    fullQuery = `[System Context: ${roleContext}]\n\n${query}`;
+  }
+
   const res = await fetch(`${BACKEND_URL}/clinica/query`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query: fullQuery }),
   });
 
   if (!res.ok) {

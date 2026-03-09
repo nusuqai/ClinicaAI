@@ -17,6 +17,7 @@ const SUGGESTED_QUERIES = [
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,10 +32,19 @@ export default function ChatbotWidget() {
 
   // Auth state listener
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       const uid = data?.session?.user?.id || null;
       wasAuthenticatedRef.current = !!data?.session;
       setCurrentUserId(uid);
+
+      if (uid) {
+        const { data: doctorData } = await supabase
+          .from('doctors')
+          .select('id')
+          .eq('user_id', uid)
+          .maybeSingle();
+        setUserRole(doctorData ? 'doctor' : 'patient');
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -44,6 +54,15 @@ export default function ChatbotWidget() {
 
       if (event === 'SIGNED_IN' && wasPreviouslyAuthenticated === false) {
         const uid = session.user.id;
+        // Determine role for the newly signed-in user
+        supabase
+          .from('doctors')
+          .select('id')
+          .eq('user_id', uid)
+          .maybeSingle()
+          .then(({ data: doctorData }) => {
+            setUserRole(doctorData ? 'doctor' : 'patient');
+          });
         // Keep current in-memory conversation and append login confirmation
         setMessages(prev => [
           ...prev,
@@ -59,6 +78,7 @@ export default function ChatbotWidget() {
 
       if (event === 'SIGNED_OUT') {
         setCurrentUserId(null);
+        setUserRole(null);
         setMessages([]);
         setSessionId(null);
         setCumulativeCredit(0);
@@ -99,7 +119,7 @@ export default function ChatbotWidget() {
         pendingContextRef.current = null;
       }
 
-      const response = await sendClinicaQuery(fullQuery, sessionId);
+      const response = await sendClinicaQuery(fullQuery, sessionId, userRole);
 
       // Save session ID from first response
       if (response.sessionId) {
