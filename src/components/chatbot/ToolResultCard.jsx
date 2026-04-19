@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Calendar, Clock, User, CheckCircle2, XCircle, Activity, Sparkles, ChevronDown, Briefcase, Users } from 'lucide-react';
+import { Star, Calendar, Clock, User, CheckCircle2, XCircle, Activity, Sparkles, ChevronDown, Briefcase, Users, Stethoscope, Phone, Mail, Heart, Droplets, FileText, ArrowRight, CalendarCheck, AlertCircle } from 'lucide-react';
 
 /**
  * Renders rich UI for a single tool result based on toolName.
@@ -42,6 +42,19 @@ export default function ToolResultCard({ toolName, data, onFillInput }) {
 
     case 'register_user':
       return <ConfirmationCard type="registered" data={data} />;
+
+    // ─── Doctor Tools ───
+    case 'get_doctor_appointments':
+      return <DoctorAppointmentList appointments={Array.isArray(data) ? data : (data.appointments || [])} filterDate={data?.filter_date} />;
+
+    case 'update_appointment_status':
+      return <AppointmentStatusCard data={data} />;
+
+    case 'get_patient_appointment_history':
+      return <PatientHistoryCard data={data} />;
+
+    case 'get_doctor_patients':
+      return <DoctorPatientList patients={Array.isArray(data) ? data : (data.patients || [])} onFillInput={onFillInput} />;
 
     default:
       return <FallbackCard toolName={toolName} data={data} />;
@@ -397,6 +410,303 @@ function EmptyState({ text }) {
   return (
     <div className="bg-white/60 rounded-xl p-4 border border-primary/5 text-center">
       <p className="font-sans text-sm text-text/40">{text}</p>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
+// ─── DOCTOR TOOL COMPONENTS ───
+// ══════════════════════════════════════════════
+
+// ─── Patient Avatar (for doctor views) ───
+function PatientAvatar({ patient, size = 'sm' }) {
+  const sizes = size === 'lg'
+    ? 'w-14 h-14 rounded-2xl text-lg'
+    : 'w-10 h-10 rounded-xl text-sm';
+
+  const initial = patient?.full_name?.charAt(0) || '?';
+  const genderColors = {
+    male: 'bg-blue-50 text-blue-600',
+    female: 'bg-pink-50 text-pink-600',
+  };
+  const colorClass = genderColors[patient?.gender?.toLowerCase()] || 'bg-teal-50 text-teal-600';
+
+  return (
+    <div className={`${sizes} ${colorClass} flex items-center justify-center font-bold shrink-0`}>
+      {initial}
+    </div>
+  );
+}
+
+// ─── Doctor Appointment List ───
+function DoctorAppointmentList({ appointments, filterDate }) {
+  if (!appointments.length) return <EmptyState text="لا توجد مواعيد" />;
+
+  const statusMap = {
+    pending:   { label: 'قيد الانتظار', color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-400' },
+    confirmed: { label: 'مؤكد',         color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-400' },
+    cancelled: { label: 'ملغى',         color: 'bg-red-50 text-red-600 border-red-200', dot: 'bg-red-400' },
+    completed: { label: 'مكتمل',        color: 'bg-slate-50 text-slate-600 border-slate-200', dot: 'bg-slate-400' },
+  };
+
+  const dateLabel = filterDate === 'today' ? 'اليوم' : filterDate === 'tomorrow' ? 'غداً' : filterDate === 'upcoming' ? 'القادمة' : filterDate;
+
+  return (
+    <div className="space-y-2">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center">
+            <Stethoscope size={14} className="text-teal-600" />
+          </div>
+          <span className="font-heading font-bold text-sm text-primary">المواعيد {dateLabel && `(${dateLabel})`}</span>
+        </div>
+        <span className="text-xs font-sans text-text/40 bg-primary/5 rounded-lg px-2 py-0.5">{appointments.length} موعد</span>
+      </div>
+
+      {/* Appointments */}
+      {appointments.slice(0, 8).map((apt, i) => {
+        const s = statusMap[apt.status] || statusMap.pending;
+        const patient = apt.patient || {};
+        const schedDate = apt.scheduled_at ? new Date(apt.scheduled_at) : null;
+
+        return (
+          <div key={apt.id || i} className="bg-white/70 rounded-xl border border-primary/5 overflow-hidden hover:border-teal-200 transition-colors">
+            <div className="p-3 flex items-center gap-3">
+              <PatientAvatar patient={patient} />
+              <div className="flex-1 min-w-0">
+                <p className="font-heading font-bold text-sm text-primary truncate">
+                  {patient.full_name || 'مريض'}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  {schedDate && (
+                    <span className="text-xs font-sans text-text/50 flex items-center gap-1">
+                      <Clock size={10} className="text-teal-500" />
+                      {schedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                    </span>
+                  )}
+                  {schedDate && (
+                    <span className="text-xs font-sans text-text/40">
+                      {schedDate.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <span className={`px-2 py-0.5 rounded-md text-[10px] font-sans font-medium border ${s.color}`}>
+                {s.label}
+              </span>
+            </div>
+
+            {/* Details row */}
+            {(apt.reason || patient.phone || patient.blood_type) && (
+              <div className="px-3 pb-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-sans text-text/50 border-t border-primary/[0.03] pt-2">
+                {apt.reason && (
+                  <span className="flex items-center gap-1">
+                    <FileText size={10} className="text-teal-400" /> {apt.reason}
+                  </span>
+                )}
+                {patient.phone && (
+                  <span className="flex items-center gap-1" dir="ltr">
+                    <Phone size={10} className="text-teal-400" /> {patient.phone}
+                  </span>
+                )}
+                {patient.blood_type && (
+                  <span className="flex items-center gap-1">
+                    <Droplets size={10} className="text-red-400" /> {patient.blood_type}
+                  </span>
+                )}
+                {patient.gender && (
+                  <span className="flex items-center gap-1">
+                    <User size={10} className="text-teal-400" /> {patient.gender === 'male' ? 'ذكر' : patient.gender === 'female' ? 'أنثى' : patient.gender}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {appointments.length > 8 && (
+        <p className="text-xs text-text/40 text-center font-sans">+{appointments.length - 8} المزيد</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Appointment Status Update Card ───
+function AppointmentStatusCard({ data }) {
+  if (!data) return null;
+
+  const statusLabels = {
+    pending: 'قيد الانتظار',
+    confirmed: 'مؤكد',
+    cancelled: 'ملغى',
+    completed: 'مكتمل',
+  };
+
+  const statusConfig = {
+    confirmed: { icon: <CheckCircle2 size={18} />, color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
+    completed: { icon: <CalendarCheck size={18} />, color: 'bg-blue-50 border-blue-200 text-blue-700' },
+    cancelled: { icon: <XCircle size={18} />, color: 'bg-red-50 border-red-200 text-red-600' },
+    pending:   { icon: <AlertCircle size={18} />, color: 'bg-amber-50 border-amber-200 text-amber-700' },
+  };
+
+  const newStatus = data.appointment?.status || data.status;
+  const cfg = statusConfig[newStatus] || statusConfig.confirmed;
+  const label = statusLabels[newStatus] || newStatus;
+
+  return (
+    <div className={`rounded-xl p-3 border flex items-center gap-3 ${cfg.color}`}>
+      {cfg.icon}
+      <div className="flex-1">
+        <span className="font-sans font-medium text-sm">
+          {data.message || `تم تحديث حالة الموعد إلى "${label}"`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Patient History Card (doctor viewing a patient's history) ───
+function PatientHistoryCard({ data }) {
+  if (!data) return null;
+
+  const patient = data.patient || {};
+  const appointments = data.appointments || [];
+
+  const statusMap = {
+    pending:   { label: 'قيد الانتظار', color: 'bg-amber-50 text-amber-700' },
+    confirmed: { label: 'مؤكد',         color: 'bg-emerald-50 text-emerald-700' },
+    cancelled: { label: 'ملغى',         color: 'bg-red-50 text-red-600' },
+    completed: { label: 'مكتمل',        color: 'bg-slate-100 text-slate-600' },
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* Patient info header */}
+      <div className="bg-gradient-to-l from-teal-50 to-white rounded-xl p-3 border border-teal-100 flex items-center gap-3">
+        <PatientAvatar patient={patient} size="lg" />
+        <div className="flex-1 min-w-0">
+          <p className="font-heading font-bold text-primary">{patient.full_name || 'مريض'}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[11px] font-sans text-text/50">
+            {patient.email && (
+              <span className="flex items-center gap-1">
+                <Mail size={10} className="text-teal-400" /> {patient.email}
+              </span>
+            )}
+            {patient.phone && (
+              <span className="flex items-center gap-1" dir="ltr">
+                <Phone size={10} className="text-teal-400" /> {patient.phone}
+              </span>
+            )}
+            {patient.blood_type && (
+              <span className="flex items-center gap-1">
+                <Droplets size={10} className="text-red-400" /> {patient.blood_type}
+              </span>
+            )}
+            {patient.date_of_birth && (
+              <span className="flex items-center gap-1">
+                <Calendar size={10} className="text-teal-400" /> {new Date(patient.date_of_birth).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-center shrink-0">
+          <span className="block text-lg font-heading font-bold text-teal-600">{appointments.length}</span>
+          <span className="text-[10px] font-sans text-text/40">زيارة</span>
+        </div>
+      </div>
+
+      {/* Timeline */}
+      {appointments.length === 0 ? (
+        <EmptyState text="لا توجد زيارات سابقة" />
+      ) : (
+        <div className="space-y-1.5">
+          {appointments.slice(0, 6).map((apt, i) => {
+            const s = statusMap[apt.status] || statusMap.pending;
+            const schedDate = apt.scheduled_at ? new Date(apt.scheduled_at) : null;
+
+            return (
+              <div key={apt.id || i} className="bg-white/60 rounded-xl p-2.5 border border-primary/5 flex items-center gap-3 hover:border-teal-200 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center text-teal-500 shrink-0">
+                  <Calendar size={14} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-sans text-primary font-medium">
+                    {schedDate
+                      ? schedDate.toLocaleDateString('ar-EG', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+                      : apt.scheduled_at_display || 'غير محدد'
+                    }
+                  </p>
+                  {apt.reason && <p className="text-[11px] font-sans text-text/50 truncate mt-0.5">{apt.reason}</p>}
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-sans font-medium ${s.color}`}>
+                  {s.label}
+                </span>
+              </div>
+            );
+          })}
+          {appointments.length > 6 && (
+            <p className="text-xs text-text/40 text-center font-sans">+{appointments.length - 6} زيارة أخرى</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Doctor Patient List ───
+function DoctorPatientList({ patients, onFillInput }) {
+  if (!patients.length) return <EmptyState text="لا يوجد مرضى" />;
+
+  return (
+    <div className="space-y-2">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center">
+            <Users size={14} className="text-teal-600" />
+          </div>
+          <span className="font-heading font-bold text-sm text-primary">قائمة المرضى</span>
+        </div>
+        <span className="text-xs font-sans text-text/40 bg-primary/5 rounded-lg px-2 py-0.5">{patients.length} مريض</span>
+      </div>
+
+      {/* Patient cards */}
+      {patients.slice(0, 8).map((patient, i) => (
+        <div
+          key={patient.id || i}
+          className="bg-white/70 rounded-xl border border-primary/5 p-3 flex items-center gap-3 hover:border-teal-200 transition-colors cursor-pointer"
+          onClick={() => onFillInput?.(`اعرض سجل المريض ${patient.full_name}`)}
+        >
+          <PatientAvatar patient={patient} />
+          <div className="flex-1 min-w-0">
+            <p className="font-heading font-bold text-sm text-primary truncate">{patient.full_name || 'مريض'}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              {patient.email && (
+                <span className="text-[11px] font-sans text-text/40 truncate">{patient.email}</span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {patient.blood_type && (
+              <span className="flex items-center gap-0.5 text-[10px] font-sans text-red-400">
+                <Droplets size={10} /> {patient.blood_type}
+              </span>
+            )}
+            {patient.total_appointments != null && (
+              <span className="bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md text-[10px] font-sans font-medium">
+                {patient.total_appointments} زيارة
+              </span>
+            )}
+            <ArrowRight size={12} className="text-text/20" />
+          </div>
+        </div>
+      ))}
+
+      {patients.length > 8 && (
+        <p className="text-xs text-text/40 text-center font-sans">+{patients.length - 8} المزيد</p>
+      )}
     </div>
   );
 }
