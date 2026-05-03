@@ -18,6 +18,7 @@ import DoctorDashboardLayout from "./components/doctor/DoctorDashboardLayout";
 import DoctorHome from "./components/doctor/DoctorHome";
 import DoctorAppointments from "./components/doctor/DoctorAppointments";
 import DoctorPatients from "./components/doctor/DoctorPatients";
+import DoctorAvailability from "./components/doctor/DoctorAvailability";
 
 function PrivateRoute({ children, session, loading }) {
   if (loading) {
@@ -98,6 +99,7 @@ export default function App() {
             <Route index element={<DoctorHome />} />
             <Route path="appointments" element={<DoctorAppointments />} />
             <Route path="patients" element={<DoctorPatients />} />
+            <Route path="availability" element={<DoctorAvailability />} />
             <Route path="profile" element={<ProfileView session={session} />} />
           </Route>
         </Routes>
