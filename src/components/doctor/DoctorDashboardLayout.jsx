@@ -197,7 +197,7 @@ export default function DoctorDashboardLayout() {
 
       {/* ── Desktop Sidebar — stretches full page height via flex ── */}
       <aside className="hidden md:flex w-64 bg-primary text-white flex-col shrink-0 z-40">
-        <div className="sticky top-0 h-screen flex flex-col overflow-y-auto">
+        <div className="sticky top-0 h-screen flex flex-col">
           <SidebarContent />
         </div>
       </aside>
