@@ -221,11 +221,11 @@ export default function ChatbotWidget() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {cumulativeCredit > 0 && (
+                {/* {cumulativeCredit > 0 && (
                   <span className="text-sm font-sans text-white bg-white/10 rounded-lg px-2 py-1 tabular-nums" title="Cumulative session cost">
                     ${cumulativeCredit.toFixed(6)}
                   </span>
-                )}
+                )} */}
                 <button
                   onClick={toggleChat}
                   className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors"
