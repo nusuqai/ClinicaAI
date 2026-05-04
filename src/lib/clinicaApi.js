@@ -28,9 +28,9 @@ export async function sendClinicaQuery(query, sessionId = null, userRole = null)
   let fullQuery = query;
   if (userRole) {
     const roleContext = userRole === 'doctor'
-      ? 'You are speaking with a licensed doctor. Provide medically accurate, professional-level information and prioritize clinical tools (appointments, patients, schedules).'
-      : 'You are speaking with a patient. Provide clear, friendly, patient-appropriate guidance and health information.';
-    fullQuery = `[System Context: ${roleContext}]\n\n${query}`;
+      ? 'CRITICAL SYSTEM INSTRUCTION: You are speaking with a licensed DOCTOR. When the user asks to "add an appointment", "set a time", or "put a schedule", they mean ADDING AVAILABILITY SLOTS for themselves. You MUST ONLY use DOCTOR tools (e.g. add_availability_slots, edit_availability_slot, delete_availability_slot, get_doctor_appointments, update_appointment_status). You are FORBIDDEN from using patient tools like book_appointment or cancel_appointment for their own schedule.'
+      : 'CRITICAL SYSTEM INSTRUCTION: You are speaking with a PATIENT. When the user asks to book or cancel an appointment, you MUST ONLY use PATIENT tools (e.g. book_appointment, cancel_appointment, get_my_appointments). You are FORBIDDEN from using doctor tools like add_availability_slots.';
+    fullQuery = `[${roleContext}]\n\n${query}`;
   }
 
   const res = await fetch(`${BACKEND_URL}/clinica/query`, {
