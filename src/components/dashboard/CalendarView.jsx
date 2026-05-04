@@ -47,11 +47,9 @@ export default function CalendarView({ session }) {
   useEffect(() => { 
     fetchAppointments(); 
     
-    const intervalId = setInterval(fetchAppointments, 15000);
     window.addEventListener('clinica-refresh-data', fetchAppointments);
 
     return () => {
-      clearInterval(intervalId);
       window.removeEventListener('clinica-refresh-data', fetchAppointments);
     };
   }, [fetchAppointments]);

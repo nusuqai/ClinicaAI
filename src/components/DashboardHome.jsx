@@ -36,15 +36,12 @@ export default function DashboardHome() {
       }
     }
 
-    let intervalId;
     if (session?.user?.id) {
       fetchDashboardData();
-      intervalId = setInterval(fetchDashboardData, 15000);
       window.addEventListener('clinica-refresh-data', fetchDashboardData);
     }
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
       window.removeEventListener('clinica-refresh-data', fetchDashboardData);
     };
   }, [session]);

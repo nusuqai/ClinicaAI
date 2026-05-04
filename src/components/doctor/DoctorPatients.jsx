@@ -59,11 +59,9 @@ export default function DoctorPatients() {
 
     fetchData();
 
-    const intervalId = setInterval(fetchData, 15000);
     window.addEventListener('clinica-refresh-data', fetchData);
 
     return () => {
-      clearInterval(intervalId);
       window.removeEventListener('clinica-refresh-data', fetchData);
     };
   }, [doctorProfile]);
