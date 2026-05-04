@@ -77,6 +77,14 @@ export default function DoctorAppointments() {
 
   useEffect(() => {
     fetchAppointments();
+
+    const intervalId = setInterval(fetchAppointments, 15000);
+    window.addEventListener('clinica-refresh-data', fetchAppointments);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('clinica-refresh-data', fetchAppointments);
+    };
   }, [fetchAppointments]);
 
   const handleUpdated = (id, newStatus, newNotes) => {
@@ -146,19 +154,17 @@ export default function DoctorAppointments() {
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
-              className={`px-3 py-1.5 rounded-xl text-sm font-sans font-medium transition-colors ${
-                activeTab === t.key
+              className={`px-3 py-1.5 rounded-xl text-sm font-sans font-medium transition-colors ${activeTab === t.key
                   ? "bg-primary text-white"
                   : "bg-background/60 text-text/60 hover:bg-primary/10"
-              }`}
+                }`}
             >
               {t.label}
               <span
-                className={`mr-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                  activeTab === t.key
+                className={`mr-1.5 text-xs px-1.5 py-0.5 rounded-full ${activeTab === t.key
                     ? "bg-white/20 text-white"
                     : "bg-primary/10 text-primary"
-                }`}
+                  }`}
               >
                 {tabCounts[t.key]}
               </span>

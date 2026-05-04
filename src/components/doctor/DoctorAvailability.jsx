@@ -113,6 +113,14 @@ export default function DoctorAvailability() {
   useEffect(() => {
     if (!doctorProfile?.id) return;
     fetchSlots();
+
+    const intervalId = setInterval(fetchSlots, 15000);
+    window.addEventListener('clinica-refresh-data', fetchSlots);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('clinica-refresh-data', fetchSlots);
+    };
   }, [doctorProfile]);
 
   async function fetchSlots() {

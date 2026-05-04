@@ -44,7 +44,17 @@ export default function CalendarView({ session }) {
     }
   }, [session]);
 
-  useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
+  useEffect(() => { 
+    fetchAppointments(); 
+    
+    const intervalId = setInterval(fetchAppointments, 15000);
+    window.addEventListener('clinica-refresh-data', fetchAppointments);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('clinica-refresh-data', fetchAppointments);
+    };
+  }, [fetchAppointments]);
 
   const handleCancel = async (apt) => {
     setCancellingId(apt.id);

@@ -36,26 +36,34 @@ export default function DashboardHome() {
       }
     }
 
+    let intervalId;
     if (session?.user?.id) {
-       fetchDashboardData();
+      fetchDashboardData();
+      intervalId = setInterval(fetchDashboardData, 15000);
+      window.addEventListener('clinica-refresh-data', fetchDashboardData);
     }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      window.removeEventListener('clinica-refresh-data', fetchDashboardData);
+    };
   }, [session]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('ar-EG', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
+    return new Intl.DateTimeFormat('ar-EG', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
       day: 'numeric',
     }).format(date);
   };
-  
+
   const formatTime = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('ar-EG', { 
+    return new Intl.DateTimeFormat('ar-EG', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
@@ -84,7 +92,7 @@ export default function DashboardHome() {
             <p className="text-3xl font-heading font-bold text-primary">{stats.upcoming}</p>
           </div>
         </div>
-        
+
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-primary/5 flex items-center gap-4">
           <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center shrink-0">
             <Clock size={24} />
@@ -136,20 +144,20 @@ export default function DashboardHome() {
             </div>
 
             <div className="flex flex-col gap-1 w-full sm:w-auto bg-white sm:bg-transparent p-4 sm:p-0 rounded-xl sm:rounded-none border sm:border-transparent border-primary/5">
-                <div className="flex items-center gap-2 text-text/80 font-sans font-medium">
-                    <CalendarIcon size={16} className="text-accent" />
-                    <span>{formatDate(latestAppointment.scheduled_at)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-text/80 font-sans font-medium">
-                    <Clock size={16} className="text-accent" />
-                    <span>{formatTime(latestAppointment.scheduled_at)}</span>
-                </div>
+              <div className="flex items-center gap-2 text-text/80 font-sans font-medium">
+                <CalendarIcon size={16} className="text-accent" />
+                <span>{formatDate(latestAppointment.scheduled_at)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-text/80 font-sans font-medium">
+                <Clock size={16} className="text-accent" />
+                <span>{formatTime(latestAppointment.scheduled_at)}</span>
+              </div>
             </div>
           </div>
         ) : (
           <div className="text-center py-10 bg-background rounded-2xl border border-primary/5 border-dashed">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-text/30 shadow-sm">
-                <CalendarIcon size={32} />
+              <CalendarIcon size={32} />
             </div>
             <p className="font-sans text-text/60 mb-2">لا يوجد لديك مواعيد قادمة.</p>
           </div>

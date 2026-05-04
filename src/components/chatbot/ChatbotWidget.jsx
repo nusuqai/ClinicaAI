@@ -165,6 +165,11 @@ export default function ChatbotWidget() {
       };
       setMessages(prev => [...prev, assistantMsg]);
 
+      // If tools were executed, dispatch an event to refresh data across all dashboards
+      if (response.toolResults && response.toolResults.length > 0) {
+        window.dispatchEvent(new CustomEvent('clinica-refresh-data'));
+      }
+
       // Notify if chat is closed
       if (!isOpen) setHasNewMessage(true);
 
@@ -290,15 +295,15 @@ export default function ChatbotWidget() {
             {/* Input Bar */}
             <div className="p-3 border-t border-primary/5 bg-white shrink-0">
               <div className="flex items-center gap-2">
-                <input
+                <textarea
                   ref={inputRef}
-                  type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="اكتب رسالتك..."
                   disabled={isLoading}
-                  className="flex-1 px-4 py-2.5 bg-background rounded-xl font-sans text-sm text-primary placeholder:text-text/30 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-60"
+                  rows={1}
+                  className="flex-1 px-4 py-2.5 bg-background rounded-xl font-sans text-sm text-primary placeholder:text-text/30 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-60 resize-none min-h-[44px] max-h-[120px]"
                 />
                 <button
                   onClick={() => handleSend()}

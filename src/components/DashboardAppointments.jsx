@@ -26,9 +26,17 @@ export default function DashboardAppointments() {
       }
     }
 
+    let intervalId;
     if (session?.user?.id) {
       fetchAppointments();
+      intervalId = setInterval(fetchAppointments, 15000);
+      window.addEventListener('clinica-refresh-data', fetchAppointments);
     }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      window.removeEventListener('clinica-refresh-data', fetchAppointments);
+    };
   }, [session]);
 
   const now = new Date();

@@ -68,6 +68,14 @@ export default function ProfileView({ session }) {
     }
 
     getProfile();
+
+    const intervalId = setInterval(getProfile, 15000);
+    window.addEventListener('clinica-refresh-data', getProfile);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('clinica-refresh-data', getProfile);
+    };
   }, [session]);
 
   const handleUpdate = async (e) => {
